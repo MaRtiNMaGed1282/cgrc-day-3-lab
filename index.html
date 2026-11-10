@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payroll Migration | CGRC Day 3 Lab</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f4f1ea;
+    --white: #fffdf7;
+    --ink: #102339;
+    --muted: #4d5e6d;
+    --line: #cdcfc8;
+    --blue: #1946b3;
+    --rail: #142840;
+    --rail-text: #e9f0fa;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.55 system-ui, sans-serif; }
+  button, textarea { font: inherit; }
+  a, button { touch-action: manipulation; }
+  :focus-visible { outline: 3px solid #2871db; outline-offset: 4px; }
+  [hidden] { display: none !important; }
+  .frame { max-width: 1540px; min-height: 100vh; margin: auto; display: grid; grid-template-columns: 274px minmax(0, 1fr); }
+  .rail { background: var(--rail); color: var(--rail-text); padding: 34px 22px; }
+  .brand { font-size: 24px; font-weight: 750; line-height: 1.2; }
+  .rail p { color: #bfcee0; margin: 8px 0 28px; font-size: 15px; }
+  .rail nav { display: grid; gap: 5px; }
+  .rail a { display: grid; grid-template-columns: 2ch 1fr; gap: 10px; text-decoration: none; color: inherit; min-height: 44px; align-items: center; padding: 8px 10px; border-inline-start: 3px solid transparent; font-size: 15px; }
+  .rail a:hover, .rail a[aria-current] { background: #263f60; }
+  .rail a[aria-current] { border-inline-start-color: #86b7ff; font-weight: 700; }
+  .rail a span:first-child { color: #a8caff; font-variant-numeric: tabular-nums; }
+  main { min-width: 0; padding: 28px clamp(20px, 5vw, 76px) 18px; }
+  header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+  .meta, .section-label, footer { font-size: 14px; color: var(--muted); }
+  .meta { font-weight: 700; }
+  .language { min-height: 44px; background: transparent; color: var(--blue); border: 1px solid #9ca8bc; padding: 4px 14px; cursor: pointer; }
+  .section-label { margin: 34px 0 8px; }
+  h1 { font-size: clamp(32px, 4.4vw, 62px); line-height: 1.09; margin: 0 0 14px; max-width: 21ch; overflow-wrap: anywhere; }
+  h2 { font-size: 21px; line-height: 1.3; margin: 0 0 12px; }
+  .lead { max-width: 66ch; margin: 0 0 26px; }
+  .workspace { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: clamp(18px, 3vw, 38px); align-items: start; }
+  .evidence { background: #e8e5db; border-top: 4px solid var(--rail); padding: 20px; }
+  .evidence p { margin: 0; }
+  .evidence p + p { border-top: 1px solid #c7c9c1; margin-top: 12px; padding-top: 12px; }
+  .task { background: var(--white); padding: 20px; border-top: 4px solid var(--blue); }
+  .task p { margin: 0 0 14px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+  legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
+  .choice { display: flex; align-items: start; gap: 9px; padding: 10px; margin-bottom: 7px; border: 1px solid var(--line); cursor: pointer; }
+  .choice:has(:checked) { border-color: var(--blue); background: #edf2ff; }
+  input { accent-color: var(--blue); margin-top: .42em; flex-shrink: 0; }
+  .action { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 7px 15px; border: 1px solid var(--blue); text-decoration: none; font-weight: 650; color: var(--blue); background: var(--white); cursor: pointer; }
+  .primary { color: white; background: var(--blue); }
+  .task .feedback { padding: 10px 12px; margin: 12px 0 0; background: #eaf0f6; border-inline-start: 3px solid var(--blue); }
+  .notes { margin-top: 18px; }
+  .notes label { display: block; font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+  textarea { width: 100%; resize: vertical; min-height: 94px; padding: 9px; border: 1px solid #929b9f; background: #fff; color: inherit; }
+  .pager { border-top: 1px solid var(--line); margin-top: 26px; padding-top: 16px; display: flex; justify-content: space-between; gap: 10px; }
+  .pager a:last-child { margin-inline-start: auto; }
+  footer { margin-top: 20px; }
+  @media (max-width: 1050px) { .frame { grid-template-columns: 215px minmax(0,1fr); } .workspace { grid-template-columns: 1fr; } }
+  @media (max-width: 650px) {
+    .frame { display: block; }
+    .rail { padding: 18px 14px 12px; }
+    .rail p { display: none; }
+    .rail nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 5px; margin-top: 8px; }
+    .rail a { gap: 6px; font-size: 14px; padding-inline: 5px; }
+    main { padding: 15px 16px 18px; }
+    .section-label { margin-top: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <aside class="rail">
+    <div class="brand">CGRC <span id="day">Day 3</span></div>
+    <p id="rail-caption">Payroll migration case file</p>
+    <nav id="steps" aria-label="Lab sections"></nav>
+  </aside>
+  <main>
+    <header>
+      <div id="meta" class="meta">Practical lab · 35–45 minutes · Fictional records</div>
+      <button type="button" id="language" class="language" lang="ar">العربية</button>
+    </header>
+    <p id="position" class="section-label"></p>
+    <h1 id="title" tabindex="-1">Payroll migration lab</h1>
+    <p id="lead" class="lead">Build an evidence trail for a fictional cloud payroll migration.</p>
+    <noscript>Enable JavaScript to navigate the lab, check decisions, and export your notes.</noscript>
+    <div class="workspace">
+      <section class="evidence" aria-labelledby="evidence-title">
+        <h2 id="evidence-title"></h2>
+        <div id="records"></div>
+      </section>
+      <section class="task" aria-labelledby="task-title">
+        <h2 id="task-title"></h2>
+        <p id="instruction"></p>
+        <form id="decision" hidden>
+          <fieldset><legend id="question"></legend><div id="choices"></div></fieldset>
+          <button id="check" class="action primary"></button>
+          <p id="feedback" class="feedback" role="status" hidden></p>
+        </form>
+        <div id="notes-area" class="notes" hidden>
+          <label id="notes-label" for="notes"></label>
+          <textarea id="notes" dir="auto"></textarea>
+        </div>
+        <button type="button" id="download" class="action primary" hidden></button>
+      </section>
+    </div>
+    <nav class="pager" id="pager" aria-label="Section navigation">
+      <a id="previous" class="action"></a>
+      <a id="next" class="action"></a>
+    </nav>
+    <footer><bdi>Eng/Sara fatehy el refaey</bdi></footer>
+  </main>
+</div>
+<script>
+const content = {
+  en: {
+    ui: {
+      day: "Day 3", rail: "Payroll migration case file", meta: "Practical lab · 35–45 minutes · Fictional records",
+      evidence: "Case records", task: "Your assignment", notes: "Team notes (optional, kept on this page until reload)",
+      check: "Check decision", download: "Download team record", previous: "Back", next: "Next section", start: "Open the case file",
+      sections: "Lab sections", pager: "Section navigation", of: "of", noAnswer: "Unanswered"
+    },
+    steps: [
+      {
+        tab: "Case briefing", title: "Can payroll go live?",
+        lead: "Your team is reviewing a fictional payroll provider’s move to a cloud platform. Build the evidence trail from a customer contract to a defensible go-live decision.",
+        records: [
+          "Scope: the cloud payroll portal, its identity service, and the old payroll system until its records are securely retired.",
+          "Roles: the Payroll Manager approves access, Identity Operations grants or removes it, and the Compliance Lead reviews the evidence."
+        ],
+        instruction: "Work in pairs. Review the records in each section, make a decision, and explain your reasoning in the notes. Download the team record at the end for the class debrief."
+      },
+      {
+        tab: "Regulatory compliance", title: "Map the obligation",
+        lead: "Start with the source requirement. The control and its evidence need to show how the team meets that requirement.",
+        records: [
+          "CL-07 · Fictional customer contract. Payroll access is limited to approved staff. For a departure on a working day, remove access by the same time on the next working day.",
+          "HR-041 · The simulated HR system records departures. Identity Operations can export time-stamped access removal records."
+        ],
+        instruction: "Identify the accountable owner and the evidence you would request.",
+        question: "Which mapping demonstrates the removal deadline?",
+        choices: [
+          "Compliance publishes a policy. Use the signed policy as proof every departure met the deadline.",
+          "Payroll Manager owns the requirement. Compare the HR departure timestamp with the access removal record."
+        ],
+        feedback: [
+          "A policy describes the rule. It does not show when a particular account was removed.",
+          "Correct. Matching departure and removal timestamps lets a reviewer assess whether the deadline was met."
+        ]
+      },
+      {
+        tab: "System lifecycle", title: "Set the go-live gate",
+        lead: "A go-live decision depends on evidence from the new platform and any legacy access that remains in scope.",
+        records: [
+          "TEST-18 · New portal access was checked. The legacy system’s departure workflow has yet to be tested.",
+          "MIG-03 · Legacy records must remain available to designated staff during reconciliation. The migration lead can test legacy access before the planned launch."
+        ],
+        instruction: "Propose a launch decision and a concrete condition for revisiting it.",
+        question: "What should the launch team do?",
+        choices: [
+          "Hold launch approval until the team tests legacy access removal and reviews the result. Keep only approved reconciliation access.",
+          "Approve launch based on the new portal test and wait until the legacy system is retired to review its access."
+        ],
+        feedback: [
+          "Correct. Legacy access is still in scope. Define who will review the result and record the decision before launch.",
+          "The legacy system still holds payroll records. A new portal test does not show that the old workflow removes access on time."
+        ]
+      },
+      {
+        tab: "Security plan", title: "Write the control entry",
+        lead: "A System Security Plan should give an assessor enough detail to understand who does what and where to verify it.",
+        records: [
+          "SSP-04 · Draft wording: “Payroll access is restricted.” No owner, timing, or evidence location is given.",
+          "OPS-12 · HR records departures. Identity Operations removes access in the portal and legacy system while both are in use."
+        ],
+        instruction: "Choose the entry that an assessor could verify. Draft your own version in the notes.",
+        question: "Which entry belongs in the plan?",
+        choices: [
+          "Access is managed according to policy, and the team checks it when necessary.",
+          "On an HR departure notice, Identity Operations removes access from both systems within one business day. The Payroll Manager reviews exceptions. HR timestamps and removal records are linked in the case ticket."
+        ],
+        feedback: [
+          "The wording leaves the trigger, deadline, systems, and evidence open to interpretation.",
+          "Correct. The entry identifies the trigger, executor, deadline, systems, reviewer, and evidence location."
+        ]
+      },
+      {
+        tab: "Document control", title: "Choose the audit evidence",
+        lead: "Two procedures and a case record are on your desk. Decide which files explain the process and which show what happened.",
+        records: [
+          "PROC-02 v2 · Approved by the Payroll Manager. Remove payroll access within one business day. PROC-02 v3 · Draft awaiting approval. It proposes two business days.",
+          "CASE-204 · HR recorded a Monday 09:00 departure. Tuesday’s 11:00 access export still lists the account as active in the legacy system."
+        ],
+        instruction: "Record the governing version and the evidence that supports the finding.",
+        question: "What belongs in the audit pack?",
+        choices: [
+          "Use the approved v2 procedure, the HR departure record, and the time-stamped legacy export. Record the exception and preserve the draft separately.",
+          "Use the newer draft and omit the earlier access export because the draft allows a longer window."
+        ],
+        feedback: [
+          "Correct. The approved procedure establishes the rule. The HR record and access export support the finding.",
+          "A newer draft does not supersede an approved procedure or change the customer contract."
+        ]
+      },
+      {
+        tab: "Audit handoff", title: "Close the finding",
+        lead: "The legacy export confirms that a former employee still had payroll access after the approved deadline.",
+        records: [
+          "Finding F-01 · CASE-204 shows legacy access remained active beyond the deadline in CL-07.",
+          "Your handoff should specify who removes access, how the removal will be verified, and how a similar delay could be detected on Day 4."
+        ],
+        instruction: "Write a short audit handoff. Include the requirement, evidence of the failure, remediation owner, and proof of closure. Download your decisions and notes for discussion."
+      }
+    ]
+  },
+  ar: {
+    ui: {
+      day: "اليوم الثالث", rail: "ملف حالة ترحيل نظام الرواتب", meta: "مختبر عملي · ٣٥–٤٥ دقيقة · سجلات افتراضية",
+      evidence: "سجلات الحالة", task: "المهمة", notes: "ملاحظات الفريق (اختيارية، تبقى على الصفحة حتى إعادة تحميلها)",
+      check: "تحقق من القرار", download: "تنزيل سجل الفريق", previous: "السابق", next: "القسم التالي", start: "افتح ملف الحالة",
+      sections: "أقسام المختبر", pager: "التنقل بين الأقسام", of: "من", noAnswer: "بلا إجابة"
+    },
+    steps: [
+      {
+        tab: "موجز الحالة", title: "هل نوافق على تشغيل النظام؟",
+        lead: "يراجع فريقك انتقال شركة رواتب افتراضية إلى منصة سحابية. تتبّع الأدلة من بند العقد حتى قرار التشغيل.",
+        records: [
+          "النطاق: بوابة الرواتب السحابية، وخدمة إدارة الهوية، والنظام القديم حتى إخراج سجلاته من الخدمة بطريقة آمنة.",
+          "الأدوار: يعتمد مدير الرواتب صلاحيات الوصول، ويمنحها أو يلغيها فريق عمليات الهوية، ويراجع مسؤول الامتثال الأدلة."
+        ],
+        instruction: "اعملوا في أزواج. راجعوا السجلات، واتخذوا قرارًا في كل قسم، وسجّلوا مبرراتكم. نزّلوا سجل الفريق في النهاية لمناقشته."
+      },
+      {
+        tab: "الامتثال التنظيمي", title: "اربط الالتزام بالضابط",
+        lead: "ابدأ بالمتطلب الوارد في المصدر. يجب أن يوضح الضابط وأدلته كيف يتحقق هذا المتطلب.",
+        records: [
+          "عقد العميل الافتراضي (CL-07): يقتصر الوصول إلى الرواتب على الموظفين المعتمدين. عند المغادرة في يوم عمل، تُلغى الصلاحيات بحلول الوقت نفسه من يوم العمل التالي.",
+          "سجل الموارد البشرية (HR-041): يسجل النظام الافتراضي حالات المغادرة، ويمكن لفريق عمليات الهوية استخراج سجلات إلغاء الوصول الموثقة بالتوقيت."
+        ],
+        instruction: "حدّد مالك المتطلب والدليل الذي ستطلبه.",
+        question: "أي ربط يثبت الالتزام بالموعد؟",
+        choices: [
+          "ينشر فريق الامتثال سياسة موقّعة ويستخدمها لإثبات إلغاء الوصول في الموعد لكل مغادر.",
+          "يتولى مدير الرواتب مسؤولية المتطلب. نقارن وقت المغادرة في سجل الموارد البشرية بوقت إلغاء الصلاحية."
+        ],
+        feedback: [
+          "توضح السياسة القاعدة، لكنها لا تثبت متى أُلغيت صلاحية حساب بعينه.",
+          "صحيح. تتيح مقارنة وقت المغادرة والإلغاء التحقق من الالتزام بالموعد."
+        ]
+      },
+      {
+        tab: "دورة حياة النظام", title: "حدّد شرط التشغيل",
+        lead: "يعتمد قرار التشغيل على أدلة المنصة الجديدة وعلى صلاحيات النظام القديم ما دام ضمن النطاق.",
+        records: [
+          "اختبار (TEST-18): فُحص الوصول إلى البوابة الجديدة، لكن إجراء إلغاء الوصول في النظام القديم لم يُختبر بعد.",
+          "ترحيل (MIG-03): تبقى السجلات القديمة متاحة للموظفين المكلّفين بالمطابقة. يستطيع مسؤول الترحيل اختبار الوصول قبل التشغيل."
+        ],
+        instruction: "اقترح قرار تشغيل وحدّد شرطًا واضحًا لإعادة النظر فيه.",
+        question: "ما الإجراء المناسب لفريق التشغيل؟",
+        choices: [
+          "أجّل الموافقة لحين اختبار إلغاء الوصول في النظام القديم ومراجعة النتيجة. احتفظ بصلاحيات المطابقة المعتمدة فقط.",
+          "وافق على التشغيل بناءً على اختبار البوابة الجديدة وأجّل مراجعة الوصول إلى حين إيقاف النظام القديم."
+        ],
+        feedback: [
+          "صحيح. النظام القديم ما زال ضمن النطاق. حدّد مَن يراجع نتيجة الاختبار وسجّل القرار قبل التشغيل.",
+          "ما زال النظام القديم يحتوي على سجلات الرواتب. اختبار البوابة الجديدة لا يثبت إلغاء الوصول في النظام القديم في الموعد."
+        ]
+      },
+      {
+        tab: "خطة أمن النظام", title: "اكتب وصف الضابط",
+        lead: "توضح خطة أمن النظام للمقيّم من ينفذ الضابط وكيف يجد دليل التنفيذ.",
+        records: [
+          "مسودة خطة الأمن (SSP-04): «الوصول إلى الرواتب مقيّد». لم يُذكر المسؤول أو التوقيت أو مكان الدليل.",
+          "إجراء التشغيل (OPS-12): توثّق الموارد البشرية المغادرة، وتُلغي عمليات الهوية الصلاحيات في البوابة والنظام القديم ما داما قيد الاستخدام."
+        ],
+        instruction: "اختر الوصف الذي يستطيع المقيّم التحقق منه واكتب صياغتك في الملاحظات.",
+        question: "أي وصف يصلح للخطة؟",
+        choices: [
+          "يُدار الوصول وفق السياسة، ويراجعه الفريق عند الحاجة.",
+          "عند إخطار المغادرة، تُلغي عمليات الهوية الصلاحيات في النظامين خلال يوم عمل واحد. يراجع مدير الرواتب الاستثناءات، وتُربط سجلات التوقيت والإلغاء بتذكرة الحالة."
+        ],
+        feedback: [
+          "لا يحدد هذا الوصف متى يبدأ الإجراء أو موعده أو الأنظمة المشمولة أو مكان الدليل.",
+          "صحيح. يحدد الوصف سبب بدء الإجراء، والمنفذ، والموعد، والأنظمة، والمراجع، ومكان الدليل."
+        ]
+      },
+      {
+        tab: "إدارة الوثائق", title: "اختر أدلة التدقيق",
+        lead: "أمامك نسختان من الإجراء وسجل حالة. حدّد ما يشرح الإجراء وما يثبت ما حدث.",
+        records: [
+          "الإجراء (PROC-02): اعتمد مدير الرواتب الإصدار الثاني، وفيه الإلغاء خلال يوم عمل. الإصدار الثالث مسودة غير معتمدة تقترح يومي عمل.",
+          "الحالة (CASE-204): سُجّلت المغادرة يوم الاثنين الساعة 09:00. أظهر كشف الثلاثاء الساعة 11:00 أن الحساب ما زال نشطًا في النظام القديم."
+        ],
+        instruction: "سجّل الإصدار المعتمد والدليل الذي يدعم الملاحظة.",
+        question: "ما الذي يُدرج في حزمة التدقيق؟",
+        choices: [
+          "الإصدار الثاني المعتمد، وسجل المغادرة، وكشف الوصول المؤرّخ. وثّق الاستثناء واحفظ المسودة منفصلة.",
+          "المسودة الأحدث، مع حذف كشف الوصول السابق لأن المسودة تسمح بمهلة أطول."
+        ],
+        feedback: [
+          "صحيح. يحدد الإجراء المعتمد القاعدة، ويدعم سجل المغادرة وكشف الوصول الملاحظة.",
+          "المسودة الأحدث لا تلغي الإجراء المعتمد ولا تغيّر عقد العميل."
+        ]
+      },
+      {
+        tab: "تسليم نتائج التدقيق", title: "أغلق ملاحظة التدقيق",
+        lead: "يؤكد كشف النظام القديم أن موظفًا سابقًا احتفظ بصلاحية الوصول إلى الرواتب بعد انتهاء المهلة المعتمدة.",
+        records: [
+          "الملاحظة (F-01): تُظهر الحالة CASE-204 استمرار الوصول إلى النظام القديم بعد مهلة البند CL-07.",
+          "حدّد من يلغي الوصول، وكيف تتحقق من الإلغاء، وكيف يمكن رصد تأخير مماثل في اليوم الرابع."
+        ],
+        instruction: "اكتب ملخصًا قصيرًا يتضمن المتطلب، ودليل الإخفاق، ومسؤول المعالجة، ودليل الإغلاق. نزّل قرارات الفريق وملاحظاته لمناقشتها."
+      }
+    ]
+  }
+};
+
+const get = id => document.getElementById(id);
+const responses = Array.from({length: content.en.steps.length}, () => ({choice: null, checked: false, notes: ""}));
+let language = "en";
+let current = 0;
+
+function render(moveFocus = false) {
+  const route = location.hash.match(/^#\/(\d+)$/);
+  const index = Number(route?.[1]) - 1;
+  current = index >= 0 && index < responses.length ? index : 0;
+  const {ui, steps} = content[language];
+  const step = steps[current];
+  const response = responses[current];
+  const arabic = language === "ar";
+
+  document.documentElement.lang = language;
+  document.documentElement.dir = arabic ? "rtl" : "ltr";
+  document.title = step.title + " | CGRC";
+  const toggle = get("language");
+  toggle.textContent = arabic ? "English" : "العربية";
+  toggle.lang = arabic ? "en" : "ar";
+  get("day").textContent = ui.day;
+  get("rail-caption").textContent = ui.rail;
+  get("meta").textContent = ui.meta;
+  get("steps").setAttribute("aria-label", ui.sections);
+  get("pager").setAttribute("aria-label", ui.pager);
+  get("position").textContent = (current + 1) + " " + ui.of + " " + steps.length + " · " + step.tab;
+  get("title").textContent = step.title;
+  get("lead").textContent = step.lead;
+  get("evidence-title").textContent = ui.evidence;
+  get("task-title").textContent = ui.task;
+  get("instruction").textContent = step.instruction;
+  get("records").replaceChildren(...step.records.map(record => {
+    const p = document.createElement("p");
+    p.textContent = record;
+    return p;
+  }));
+  get("steps").replaceChildren(...steps.map((entry, i) => {
+    const link = document.createElement("a");
+    const number = document.createElement("span");
+    number.textContent = String(i + 1).padStart(2, "0");
+    link.href = "#/" + (i + 1);
+    link.append(number, document.createTextNode(entry.tab));
+    if (current === i) link.setAttribute("aria-current", "step");
+    return link;
+  }));
+
+  get("decision").hidden = !step.choices;
+  get("question").textContent = step.question ?? "";
+  get("check").textContent = ui.check;
+  get("choices").replaceChildren(...(step.choices ?? []).map((choice, i) => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "decision";
+    input.value = String(i);
+    input.required = true;
+    input.checked = response.choice === i;
+    label.className = "choice";
+    label.append(input, document.createTextNode(choice));
+    return label;
+  }));
+  showFeedback();
+  const last = current === steps.length - 1;
+  get("notes-area").hidden = current === 0;
+  get("notes-label").textContent = ui.notes;
+  get("notes").value = response.notes;
+  get("download").hidden = !last;
+  get("download").textContent = ui.download;
+  get("previous").hidden = current === 0;
+  get("previous").href = "#/" + current;
+  get("previous").textContent = ui.previous;
+  get("next").hidden = last;
+  get("next").href = "#/" + (current + 2);
+  get("next").textContent = current === 0 ? ui.start : ui.next;
+  if (moveFocus) get("title").focus();
+}
+
+function showFeedback() {
+  const response = responses[current];
+  const panel = get("feedback");
+  panel.hidden = !response.checked;
+  panel.textContent = response.checked ? content[language].steps[current].feedback[response.choice] : "";
+}
+
+get("language").addEventListener("click", () => {
+  language = language === "en" ? "ar" : "en";
+  render();
+});
+get("decision").addEventListener("change", event => {
+  responses[current].choice = Number(event.target.value);
+  responses[current].checked = false;
+  showFeedback();
+});
+get("decision").addEventListener("submit", event => {
+  event.preventDefault();
+  responses[current].checked = true;
+  showFeedback();
+});
+get("notes").addEventListener("input", event => {
+  responses[current].notes = event.target.value;
+});
+get("download").addEventListener("click", () => {
+  const {ui, steps} = content[language];
+  const report = steps.slice(1).map((step, i) => {
+    const {choice, notes} = responses[i + 1];
+    const decision = step.choices ? step.choices[choice] ?? ui.noAnswer : "";
+    return [step.tab, decision, notes].filter(Boolean).join("\n");
+  });
+  const blob = new Blob(["\uFEFF", ["CGRC · " + ui.day, ...report].join("\n\n")], {type: "text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "cgrc-day-3-team-record.txt";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+window.addEventListener("hashchange", () => render(true));
+render();
+</script>
+</body>
+</html>
