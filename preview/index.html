@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#081426">
+<meta name="description" content="Interactive bilingual CGRC Day 3 lab. Compliance, system lifecycle, security plans and controlled documentation through a fictional payroll migration.">
+<title>CGRC Day 3 · Payroll Migration Lab</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<a class="skip" href="#main">انتقل إلى مساحة العمل / Skip to workspace</a>
+<div class="app">
+  <aside class="sidebar" aria-label="Lab navigation">
+    <a href="#/1" class="brand"><strong>CGRC</strong><span id="brand-day">اليوم الثالث</span></a>
+    <p id="brand-sub">مختبر ترحيل نظام الرواتب</p>
+    <nav id="navigation"></nav>
+    <div class="sidebar-bottom"><span class="signal"></span><span id="simulation-label">بيئة تدريبية افتراضية</span></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb"><span id="module-label"></span><strong>PAYROLL / CASE-204</strong></div>
+      <div class="top-actions">
+        <button id="language" class="quiet" type="button" lang="en">English</button>
+        <button id="notes-button" class="quiet" type="button"></button>
+        <button id="fullscreen" class="quiet" type="button"></button>
+      </div>
+    </header>
+    <div class="mobile-nav"><label for="jump" id="jump-label"></label><select id="jump"></select></div>
+    <main id="main" tabindex="-1">
+      <div class="screen-heading"><div><p id="position" class="overline"></p><h1 id="title"></h1><p id="lead" class="lead"></p></div><div id="case-status" class="status-summary"></div></div>
+      <div id="screen"></div>
+      <div id="save-state" class="save-state" role="status"></div>
+    </main>
+    <footer class="bottom">
+      <a id="previous" class="button secondary"></a>
+      <div class="bottom-center"><span id="page-count"></span><span class="progress-track"><span id="progress"></span></span></div>
+      <a id="next" class="button primary"></a>
+    </footer>
+    <div class="credit"><bdi>Eng/Sara fatehy el refaey</bdi></div>
+  </div>
+</div>
+<dialog id="notes-dialog">
+  <form method="dialog" class="dialog-head"><h2 id="notes-title"></h2><button class="quiet" id="close-notes"></button></form>
+  <div id="instructor-notes"></div>
+  <label for="team-note" id="note-label"></label><textarea id="team-note" maxlength="2000" rows="5"></textarea>
+  <p id="note-help" class="muted"></p>
+</dialog>
+<dialog id="reset-dialog"><h2 id="reset-title"></h2><p id="reset-description"></p><div class="actions"><button id="cancel-reset" class="button secondary"></button><button id="confirm-reset" class="button danger"></button></div></dialog>
+<div id="announcement" class="toast" role="status" aria-live="polite"></div>
+<noscript><p class="no-script">This lab requires JavaScript for its scenario engine, workbenches and audit export.</p></noscript>
+<script type="module" src="./app.mjs"></script>
+</body>
+</html>
