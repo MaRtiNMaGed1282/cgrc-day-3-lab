@@ -32,7 +32,7 @@ export const sections = [
 
 export function freshState() {
   return {
-    version:VERSION, lang:'ar', maps:{}, sourceRead:[], selectedNode:'iam',
+    version:VERSION, lang:'ar', reduceMotion:false, maps:{}, sourceRead:[], selectedNode:'iam',
     config:{legacy:false,delay:false}, runs:[], scope:['hr','approval','iam','cloud','legacy','evidence'],
     tests:{reconcile:null,rollback:null}, reconcileFixed:false, rollbackSnapshot:'approved',
     ssp:{owner:'',trigger:'',systems:'both',deadline:'1',evidence:'',status:'partial',reviewed:false},
@@ -46,6 +46,8 @@ export function hydrate(raw) {
   const state=freshState();
   if (!raw || raw.version!==VERSION) return state;
   state.lang=raw.lang==='en'?'en':'ar';
+  state.reduceMotion=raw.reduceMotion===true;
+  if(nodes.some(n=>n.id===raw.selectedNode))state.selectedNode=raw.selectedNode;
   state.maps=raw.maps && typeof raw.maps==='object' && !Array.isArray(raw.maps)?raw.maps:{};
   state.sourceRead=Array.isArray(raw.sourceRead)?raw.sourceRead.filter(x=>sources.some(s=>s.id===x)):[];
   state.scope=Array.isArray(raw.scope)?raw.scope.filter(x=>nodes.some(n=>n.id===x)):state.scope;

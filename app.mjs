@@ -7,8 +7,9 @@ let state=freshState(), durable=true;
 try { state=hydrate(JSON.parse(localStorage.getItem(STORAGE))); } catch { durable=false; }
 let current=1, selectedSource='CL-07', selectedStage=0, player=null, toastTimer;
 const t=(en,ar)=>state.lang==='ar'?ar:en;
-const l=value=>typeof value==='object'?value[state.lang]:value;
+const l=value=>value&&typeof value==='object'?value[state.lang]:value;
 const E=value=>esc(l(value));
+const reduceMotion=()=>state.reduceMotion||matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mono=value=>`<bdi class="mono">${esc(value)}</bdi>`;
 const button=(action,label,kind='primary',extra='')=>`<button type="button" class="button ${kind}" data-action="${action}" ${extra}>${label}</button>`;
 const goto=(id,label,kind='secondary')=>`<a class="button ${kind}" href="#/${id}">${label}</a>`;
@@ -39,7 +40,7 @@ function checklist(checks,links=false) {
   return `<ul class="checklist">${checks.map(c=>`<li class="${c.pass?'done':''}"><span class="check-icon" aria-hidden="true">${c.pass?'✓':'○'}</span><span class="label">${E(c.label)} ${status(c.pass?'pass':'pending')}${links&&!c.pass?` <a href="#/${c.id}">${t('Open task','افتح المهمة')}</a>`:''}</span></li>`).join('')}</ul>`;
 }
 function explanation(id) {
-  return `<details class="explanation" open><summary>${t('Purpose and instructions','الشرح وخطوات العمل')}</summary><p>${E(instruction[id])}</p></details>`;
+  return `<details class="explanation" ${id===1||matchMedia('(min-width: 651px)').matches?'open':''}><summary>${t('Purpose and instructions','الشرح وخطوات العمل')}</summary><p>${E(instruction[id])}</p></details>`;
 }
 function icon(id) {
   const paths={
@@ -108,9 +109,11 @@ function simulation() {
   return `<section class="panel">
     <div class="scenario-config"><label class="check-label"><input type="checkbox" id="include-legacy" ${state.config.legacy?'checked':''}>${t('Include legacy removal','تفعيل خطوة إلغاء النظام القديم')}</label><label class="check-label"><input type="checkbox" id="late-removal" ${state.config.delay?'checked':''}>${t('Delay legacy removal until Tuesday 11:00','تأخير إلغاء القديم إلى الثلاثاء 11:00')}</label></div>
     <div class="sim-toolbar">${button('sim-play',t('Play scenario','تشغيل السيناريو'))}${button('sim-pause',t('Pause','إيقاف مؤقت'),'secondary')}${button('sim-next',t('Next step','الخطوة التالية'),'secondary')}${button('sim-reset',t('Replay from start','إعادة من البداية'),'secondary')}<label class="speed" for="sim-speed">${t('Speed','السرعة')}<select id="sim-speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label></div>
-    ${mapHTML(events)}
-    <div id="sim-detail" class="sim-detail" role="status"></div>
-  </section><div class="workspace" style="margin-top:20px"><section class="panel"><h2>${t('Event record','سجل الأحداث')}</h2><div id="sim-log" class="log"></div></section>${inspectorHTML()}</div>`;
+    <div class="sim-workspace"><div>${mapHTML(events)}</div><section class="sim-reader">
+      <div id="sim-detail" class="sim-detail" role="status"></div>
+      <h3>${t('Event record','سجل الأحداث')}</h3><div id="sim-log" class="log"></div>
+    </section></div>
+  </section><div style="margin-top:20px">${inspectorHTML()}</div>`;
 }
 const stages=[
   [pair('Plan','التخطيط'),pair('Define the service, data flows, source obligations and system boundary. Both systems stay in scope during reconciliation.','حدّد الخدمة وتدفقات البيانات ومصادر الالتزامات وحدود النظام. يبقى النظامان في النطاق أثناء المطابقة.'),pair('Obligations register and scope record','سجل الالتزامات وتحديد النطاق')],
@@ -219,6 +222,8 @@ function render(moveFocus=false) {
   const section=sections[current-1],ar=state.lang==='ar';
   document.documentElement.lang=state.lang;
   document.documentElement.dir=ar?'rtl':'ltr';
+  document.documentElement.toggleAttribute('data-reduced-motion',state.reduceMotion);
+  document.querySelector('.sidebar').setAttribute('aria-label',t('Lab navigation','التنقل في المختبر'));
   document.title=l(section.title)+' · CGRC Day 3 Lab';
   $('brand-day').textContent=t('Day 3','اليوم الثالث');
   $('brand-sub').textContent=t('Payroll migration lab','مختبر ترحيل نظام الرواتب');
@@ -228,7 +233,8 @@ function render(moveFocus=false) {
   $('notes-button').textContent=t('Guide & notes','الدليل والملاحظات');
   $('fullscreen').textContent=document.fullscreenElement?t('Exit full screen','خروج من العرض'):t('Full screen','عرض كامل');
   $('module-label').textContent=section.module?t('Lecture','المحاضرة')+' '+section.module:t('Day 3 workspace','مساحة عمل اليوم الثالث');
-  $('position').textContent=t('Station','المحطة')+' '+current+' / 14';
+  $('skip').textContent=t('Skip to workspace','انتقل إلى مساحة العمل');
+  $('position').innerHTML=t('Station','المحطة')+' <bdi dir="ltr">'+current+' / 14</bdi>';
   $('title').textContent=l(section.title);
   $('lead').textContent=l(section.lead);
   let group=-1;
@@ -251,7 +257,7 @@ function render(moveFocus=false) {
   $('next').href='#/'+Math.min(14,current+1);
   $('next').textContent=t('Next station','المحطة التالية');
   $('next').hidden=current===14;
-  $('page-count').textContent=current+' / 14';
+  $('page-count').innerHTML='<bdi dir="ltr">'+current+' / 14</bdi>';
   $('progress').style.width=(current/14*100)+'%';
   save();
   if(current===4) { player=new ScenarioPlayer();player.draw(); }
@@ -279,7 +285,7 @@ class ScenarioPlayer {
     this.last=performance.now();
     const tick=now=>{
       const f=this.flight;
-      const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?220:1400/this.speed;
+      const duration=reduceMotion()?220:1400/this.speed;
       f.progress=Math.min(1,f.progress+(now-this.last)/duration);
       this.last=now;
       this.position(f.progress);
@@ -289,7 +295,6 @@ class ScenarioPlayer {
       this.events.push(event);this.index=f.target;this.flight=null;
       if(this.index===5&&!this.committed) {
         completeRun(state,this.events);this.committed=true;save();
-        toast(lastRun(state).pass?t('Test complete. Both systems met the deadline. Review the plan using this new evidence.','اكتمل الاختبار وحقق النظامان المهلة. راجع الخطة بهذه الأدلة الجديدة.'):t('Test complete. The legacy result missed the requirement. Inspect the log and repair the workflow.','اكتمل الاختبار وأخفق النظام القديم في المتطلب. افحص السجل وعالج الإجراء.'));
       }
       this.draw();
       if(this.auto&&this.index<5) this.advance();
@@ -303,7 +308,7 @@ class ScenarioPlayer {
     const path=$('route-'+event.node);
     if(packet&&path) {
       const point=path.getPointAtLength(path.getTotalLength()*progress);
-      packet.setAttribute('visibility',matchMedia('(prefers-reduced-motion: reduce)').matches?'hidden':'visible');
+      packet.setAttribute('visibility',reduceMotion()?'hidden':'visible');
       packet.setAttribute('cx',point.x);packet.setAttribute('cy',point.y);
       packet.style.fill=event.status==='fail'?'var(--red)':'var(--cyan)';
     }
@@ -321,7 +326,7 @@ class ScenarioPlayer {
   draw() {
     if(current!==4)return;
     const event=this.events.at(-1);
-    $('sim-detail').innerHTML=event?`<div class="event-number">${this.index+1} / 6 · ${mono(event.code)} · ${mono(event.time)}</div><p>${E(event.text)}</p>${this.index===5?status(event.status):''}`:`<div class="event-number">CASE-204 · ${t('Ready to run','جاهز للتشغيل')}</div><p>${t('Play the configured scenario or advance one step at a time. The baseline has no legacy removal task.','شغّل السيناريو أو تقدّم خطوة بخطوة. الوضع الأصلي لا يتضمن إلغاء النظام القديم.')}</p>`;
+    $('sim-detail').innerHTML=event?`<div class="event-number">${mono(this.index+1+' / 6')} · ${mono(event.code)} · ${mono(event.time)}</div><p>${E(event.text)}</p>${this.index===5?status(event.status):''}`:`<div class="event-number">CASE-204 · ${t('Ready to run','جاهز للتشغيل')}</div><p>${t('Play the configured scenario or advance one step at a time. The baseline has no legacy removal task.','شغّل السيناريو أو تقدّم خطوة بخطوة. الوضع الأصلي لا يتضمن إلغاء النظام القديم.')}</p>`;
     $('sim-log').innerHTML=this.events.length?this.events.map(e=>`<div class="log-row">${esc(e.time)} · ${esc(e.code)} · ${esc(e.node.toUpperCase())} <strong class="${e.status}">${e.status.toUpperCase()}</strong></div>`).join(''):`<p>${t('No events generated yet.','لم تُنتج أحداث بعد.')}</p>`;
     const seen=new Map(this.events.map(e=>[e.node,e.status]));
     document.querySelectorAll('[data-node]').forEach(n=>{
@@ -346,7 +351,7 @@ async function pipeline(elementId,onComplete) {
     if(token!==pipelineToken)return;
     items[i].classList.remove('blocked','done');
     items[i].classList.add('current');
-    await new Promise(resolve=>setTimeout(resolve,matchMedia('(prefers-reduced-motion: reduce)').matches?100:650));
+    await new Promise(resolve=>setTimeout(resolve,reduceMotion()?100:650));
     if(token!==pipelineToken)return;
     items[i].classList.remove('current');items[i].classList.add('done');
   }
@@ -364,7 +369,7 @@ function refresh() {
   const priorDetails=$('screen').querySelector('details')?.open;
   render();
   const details=$('screen').querySelector('details');
-  if(details&&priorDetails===false)details.open=false;
+  if(details&&priorDetails!==undefined)details.open=priorDetails;
   const replacement=id?$(id):attribute?[...document.querySelectorAll('[data-'+attribute+']')].find(el=>el.dataset[attribute]===value&&!el.closest('svg[hidden]')&&el.getClientRects().length):null;
   replacement?.focus({preventScroll:true});
 }
@@ -438,7 +443,7 @@ function advanceDocument() {
   if(d.stage===4)state.procedure='v3';
   refresh();
   const token=$('document-token');
-  if(token&&start!==undefined&&!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if(token&&start!==undefined&&!reduceMotion()) {
     const distance=start-token.getBoundingClientRect().left;
     token.animate([{transform:`translateX(calc(-50% + ${distance}px))`},{transform:'translateX(-50%)'}],{duration:650,easing:'cubic-bezier(.2,.8,.2,1)'});
   }
@@ -608,6 +613,7 @@ $('screen').addEventListener('input',event=>{
 });
 
 $('language').addEventListener('click',()=>{state.lang=state.lang==='ar'?'en':'ar';render();});
+$('skip').addEventListener('click',event=>{event.preventDefault();$('main').focus();});
 $('jump').addEventListener('change',event=>{location.hash='#/'+event.target.value;});
 $('notes-button').addEventListener('click',()=>{
   $('notes-title').textContent=t('Guide and team notes','دليل المحاضِرة وملاحظات الفريق');
@@ -615,14 +621,21 @@ $('notes-button').addEventListener('click',()=>{
   $('instructor-notes').innerHTML=`<p>${E(instruction[current])}</p><h3>${t('Demonstration and debrief','عرض تطبيقي ومناقشة')}</h3><p>${E(debrief[current-1])}</p><p class="small">${t('Keyboard: [ and ] move between stations. On the simulator, Space plays or pauses, S advances one step, and R resets playback.','اختصارات: استخدم [ و ] للتنقل. في المحاكاة، المسافة للتشغيل أو الإيقاف، و S للخطوة التالية، و R للإعادة.')}</p>`;
   $('note-label').textContent=t('Team notes for this station','ملاحظات الفريق لهذه المحطة');
   $('team-note').value=state.notes[current]||'';
+  $('motion-label').textContent=t('Reduce motion in this lab','تقليل الحركة في المختبر');
+  $('reduce-motion').checked=state.reduceMotion;
   $('note-help').textContent=t('Notes are included in the audit record download.','تظهر الملاحظات في سجل التدقيق القابل للتنزيل.');
   $('notes-dialog').showModal();
 });
 $('team-note').addEventListener('input',event=>{state.notes[current]=event.target.value;save();});
+$('reduce-motion').addEventListener('change',event=>{
+  state.reduceMotion=event.target.checked;
+  document.documentElement.toggleAttribute('data-reduced-motion',state.reduceMotion);
+  save();
+});
 $('cancel-reset').addEventListener('click',()=>$('reset-dialog').close());
 $('confirm-reset').addEventListener('click',()=>{
-  const lang=state.lang;
-  state=freshState();state.lang=lang;selectedSource='CL-07';selectedStage=0;
+  const {lang,reduceMotion}=state;
+  state=freshState();state.lang=lang;state.reduceMotion=reduceMotion;selectedSource='CL-07';selectedStage=0;
   $('reset-dialog').close();
   save();location.hash='#/1';render(true);
 });
